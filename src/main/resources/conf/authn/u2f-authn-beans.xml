@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+       default-init-method="initialize" default-destroy-method="destroy">
+
+    <bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer" p:placeholderPrefix="%{"
+          p:placeholderSuffix="}"/>
+
+    <bean class="net.shibboleth.idp.profile.impl.ProfileActionBeanPostProcessor" />
+    <bean class="net.shibboleth.ext.spring.config.IdentifiableBeanPostProcessor" />
+
+    <import resource="u2f-authn-config.xml" />
+
+    <bean id="initializeU2fRequest"
+          scope="prototype"
+          class="eu.stderr.shibboleth.idp.u2f.authn.impl.InitializeU2fRequest"
+          p:deviceDataStore-ref="shibboleth.u2f.DeviceDataStore" />
+
+    <bean id="processU2fResponse"
+          scope="prototype"
+          class="eu.stderr.shibboleth.idp.u2f.authn.impl.ProcessU2fResponse"
+          p:httpServletRequest-ref="shibboleth.HttpServletRequest" />
+
+    <bean id="validateU2fResponse"
+          scope="prototype"
+          class="eu.stderr.shibboleth.idp.u2f.authn.impl.ValidateU2fResponse"
+          p:httpServletRequest-ref="shibboleth.HttpServletRequest"
+          p:deviceDataStore-ref="shibboleth.u2f.DeviceDataStore" />
+
+    <!-- DummyDataStore - Only for testing one hardcoded U2F keyHandle and publicKey for ANY Authn/Password user -->
+    <!--
+    <bean id="shibboleth.u2f.DeviceDataStore" class="eu.stderr.shibboleth.idp.u2f.authn.impl.datastores.DummyDataStore">
+        <constructor-arg ref="shibboleth.authn.dummyBackend.keyHandle"/>
+        <constructor-arg ref="shibboleth.authn.dummyBackend.publicKey"/>
+    </bean>
+    -->
+
+    <!-- Yubico U2F Validation Server Data Store - Basic authentication-->
+    <bean id="shibboleth.u2f.DeviceDataStore" class="eu.stderr.shibboleth.idp.u2f.authn.impl.datastores.YubicoU2fValidationServerDataStore">
+        <constructor-arg ref="shibboleth.authn.u2fval.endPoint"/>
+        <constructor-arg ref="shibboleth.authn.u2fval.username"/>
+        <constructor-arg ref="shibboleth.authn.u2fval.password"/>
+    </bean>
+
+</beans>

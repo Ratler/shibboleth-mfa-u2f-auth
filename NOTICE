@@ -1,0 +1,23 @@
+=========================================================================
+==  NOTICE file corresponding to the section 4 d of                    ==
+==  the Apache License, Version 2.0,                                   ==
+==  in this case for the United ID shibboleth mongodb connector.       ==
+=========================================================================
+Shibboleth multi factor u2f auth plugin
+Copyright (c) 2016 Stefan Wold
+
+
+
+We wish to acknowledge the following copyrighted works that make up
+portions of this software.
+
+This software includes third party software subject to the following copyrights:
+
+/*
+Copyright 2014 Google Inc. All rights reserved
+
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file or at
+https://developers.google.com/open-source/licenses/bsd
+*/
+

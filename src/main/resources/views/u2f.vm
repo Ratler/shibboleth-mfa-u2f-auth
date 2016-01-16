@@ -1,0 +1,43 @@
+#set ($data = $authenticationContext.getSubcontext('eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext').getAuthenticateRequestDataAsJson())
+#set ($errorMessage = $authenticationContext.getSubcontext('eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext').getErrorMessage())
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>#springMessageText("idp.title", "Web Login Service")</title>
+    <link rel="stylesheet" type="text/css" href="$request.getContextPath()/css/main.css">
+    <script src="$request.getContextPath()/js/u2f-api.js"></script>
+    <script>
+        var request = $data;
+        setTimeout(function() {
+            u2f.sign(request.authenticateRequests,
+                    function(data) {
+                        document.getElementById('tokenResponse').value = JSON.stringify(data);
+                        document.getElementById('u2f_form').submit();
+                    });
+        }, 1000);
+    </script>
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+        <header>
+            <img src="$request.getContextPath()#springMessage("idp.logo")" alt="#springMessage("idp.logo.alt-text", "logo")">
+        </header>
+        <div class="content">
+            <div class="column one">
+                #parse("login-error.vm")
+                #if("$errorMessage" != "")
+                    <p class="form-element form-error">$encoder.encodeForHTML($errorMessage)</p>
+                #end
+                <p>Touch your U2F token to authenticate.</p>
+                <form id="u2f_form" action="$flowExecutionUrl" method="POST">
+                    <input type="hidden" name="_eventId" value="proceed" />
+                    <input type="hidden" name="tokenResponse" id="tokenResponse"/>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

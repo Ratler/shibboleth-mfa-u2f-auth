@@ -1,0 +1,56 @@
+apply plugin: 'groovy'
+apply plugin: 'distribution'
+
+
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
+repositories {
+    maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
+    jcenter()
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:${project.'groovy.version'}"
+    compile "com.yubico:u2flib-server-core:${project.'yubico-u2flib.version'}"
+
+    provided "javax.servlet:javax.servlet-api:${project.'javax-servlet.version'}"
+    provided "net.shibboleth.idp:idp-authn-api:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-authn-impl:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-session-api:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-profile-impl:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-attribute-api:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-attribute-resolver-api:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-attribute-resolver-spring:${project.'shibboleth.version'}"
+    provided "net.shibboleth.idp:idp-profile-api:${project.'shibboleth.version'}"
+    provided "org.opensaml:opensaml-profile-api:${project.'opensaml.version'}"
+    provided "org.springframework:spring-context:${project.'spring.version'}"
+    provided "org.springframework:spring-web:${project.'spring.version'}"
+    provided "org.springframework.webflow:spring-webflow:${project.'spring-webflow.version'}"
+
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+distributions {
+    main {
+        contents {
+            duplicatesStrategy = 'exclude'
+            from {
+                'src/main/resources'
+            }
+            into ('edit-webapp/WEB-INF/lib') {
+                from { project.jar }
+                from { (project.configurations.compile - project.configurations.provided )}
+            }
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = 2.10
+}
