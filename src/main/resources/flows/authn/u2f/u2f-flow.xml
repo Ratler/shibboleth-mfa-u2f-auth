@@ -2,7 +2,13 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/webflow http://www.springframework.org/schema/webflow/spring-webflow.xsd"
 	parent="authn.abstract, authn/conditions">
 
+    <!-- Rudimentary impediment to direct execution of subflow. -->
     <input name="calledAsSubflow" type="boolean" required="true" />
+
+    <subflow-state id="CallPasswordFlow" subflow="authn/Password">
+        <input name="calledAsSubflow" value="true" />
+        <transition on="proceed" to="displayU2fForm" />
+    </subflow-state>
 
     <!-- Display U2F authentication view -->
     <view-state id="displayU2fForm" view="u2f">
