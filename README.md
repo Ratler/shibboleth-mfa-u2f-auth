@@ -80,6 +80,7 @@ Generic support for SQL and MongoDB will be available shortly. I18N support is o
 ### (Optional) Alternative flow configuration
 If the property `idp.authn.flows.initial= ` is required in `$IDP_HOME/conf/idp.properties`, eg `idp.authn.flows.initial= Password`, the flow configuration needs to be tweaked a little bit. In addition to the configuration from step 3 to 8 do the following, then rebuild the WAR as in step 9:
 * Edit `$IDP_HOME/flows/authn/conditions/conditions-flow.xml` and add the following just below the tag ` <action-state id="ValidateUsernamePassword">`
+
   ```
   <!-- Enable u2f -->
   <evaluate expression="ValidateUsernamePassword" />
@@ -88,6 +89,7 @@ If the property `idp.authn.flows.initial= ` is required in `$IDP_HOME/conf/idp.p
   <!-- End u2f -->
   ```
   also in the same file just before the tag `</flow>` add the following:
+  
   ```
   <subflow-state id="U2fAuth" subflow="authn/u2f">
       <input name="calledAsSubflow" value="true" />
@@ -95,6 +97,7 @@ If the property `idp.authn.flows.initial= ` is required in `$IDP_HOME/conf/idp.p
   </subflow-state>
   ```
 *  Edit `$IDP_HOME/flows/authn/u2f/u2f-flow.xml` and disable the subflow tag, eg:
+
   ```
   <!--
   <subflow-state id="CallPasswordFlow" subflow="authn/Password">
