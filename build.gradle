@@ -1,6 +1,19 @@
 apply plugin: 'groovy'
 apply plugin: 'distribution'
 apply plugin: 'net.researchgate.release'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        Console console = System.console()
+        def password = console.readPassword("PGP password: ")
+        allprojects { ext."signing.password" = password }
+        // Only sign releases
+        allprojects { ext.isReleaseVersion = !version.endsWith("SNAPSHOT") }
+    }
+}
 
 buildscript {
     repositories {
@@ -55,6 +68,78 @@ distributions {
             into ('edit-webapp/WEB-INF/lib') {
                 from { project.jar }
                 from { (project.configurations.compile - project.configurations.provided )}
+            }
+        }
+    }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+configurations.archives.with {
+    artifacts.remove artifacts.find { it.archiveTask.is distZip }
+    artifacts.remove artifacts.find { it.archiveTask.is distTar }
+}
+
+signing {
+    required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'shibboleth-mfa-u2f-auth'
+                groupId 'eu.stderr.shibboleth'
+                artifactId = 'shibboleth-mfa-u2f-auth'
+                packaging 'jar'
+                description 'U2F multifactor authentication plugin for Shibboleth IdPv3'
+                url 'https://github.com/Ratler/shibboleth-mfa-u2f-auth'
+
+                scm {
+                    connection 'scm:git:https://github.com/Ratler/shibboleth-mfa-u2f-auth'
+                    developerConnection 'scm:git:git@github.com/Ratler/shibboleth-mfa-u2f-auth.git'
+                    url 'https://github.com/Ratler/shibboleth-mfa-u2f-auth'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'Ratler'
+                        name 'Stefan Wold'
+                        email 'ratler@stderr.eu'
+                    }
+                }
             }
         }
     }
