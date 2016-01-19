@@ -1,6 +1,15 @@
 apply plugin: 'groovy'
 apply plugin: 'distribution'
+apply plugin: 'net.researchgate.release'
 
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'net.researchgate:gradle-release:2.3.5'
+    }
+}
 
 configurations {
     provided
