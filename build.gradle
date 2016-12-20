@@ -3,6 +3,7 @@ apply plugin: 'distribution'
 apply plugin: 'net.researchgate.release'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'idea'
 
 
 gradle.taskGraph.whenReady { taskGraph ->
@@ -105,11 +106,11 @@ uploadArchives {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
+                authentication(userName: hasProperty('ossrhUsername', null), password: hasProperty('ossrhPassword', null))
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
+                authentication(userName: hasProperty('ossrhUsername', null), password: hasProperty('ossrhPassword', null))
             }
 
             pom.project {
@@ -147,4 +148,8 @@ uploadArchives {
 
 task wrapper(type: Wrapper) {
     gradleVersion = 2.10
+}
+
+String hasProperty(property, defaultProperty) {
+    return project.hasProperty(property) ? project.hasProperty(property) : defaultProperty
 }
