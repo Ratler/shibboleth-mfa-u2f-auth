@@ -15,10 +15,13 @@
  *
  */
 
-package eu.stderr.shibboleth.idp.u2f.authn
+package eu.stderr.shibboleth.idp.u2f.authn.api
 import eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext
 
 interface DeviceDataStore {
-    def beginAuthentication(String username, U2fUserContext u2fUserContext)
+    boolean hasU2fDevice(String username)
+    def beginAuthentication(U2fUserContext userContext)
     boolean finishAuthentication(U2fUserContext u2fUserContext)
+    def beginRegistration(U2fUserContext u2fUserContext)
+    boolean finishRegistration(U2fUserContext u2fUserContext)
 }

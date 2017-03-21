@@ -16,24 +16,34 @@
  */
 
 package eu.stderr.shibboleth.idp.u2f.authn.impl.datastores
-import eu.stderr.shibboleth.idp.u2f.authn.DeviceDataStore
+
+import eu.stderr.shibboleth.idp.u2f.authn.api.DeviceDataStore
 import eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext
+import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
+import net.shibboleth.idp.authn.AuthnEventIds
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.*
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.http.client.InterceptingClientHttpRequestFactory
+import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
 
+@Service(value='YubicoU2fValidationServerDataStore')
 @Slf4j
 class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceDataStore {
     private String endPoint
     private HttpHeaders headers = new HttpHeaders()
 
     /** Constructor */
-    YubicoU2fValidationServerDataStore(String endPoint, String username = null, String password = null) {
+    @Autowired
+    YubicoU2fValidationServerDataStore(@Value('${u2f.u2fval.endPoint}') String endPoint,
+                                       @Value('${u2f.u2fval.username}') String username = null,
+                                       @Value('${u2f.u2fval.password}') String password = null) {
         log.debug("YubicoU2fValidationServerDataStore constructor adding endpoint (${endPoint})")
         if (endPoint[-1] != '/') {
             endPoint += '/'
@@ -50,11 +60,50 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
     }
 
     @Override
-    def beginAuthentication(String username, U2fUserContext u2fUserContext) {
+    boolean hasU2fDevice(String username) {
+        log.debug("Check if user '{}' have U2F", username)
         HttpEntity<Object> entity = new HttpEntity<>(headers)
-        ResponseEntity<String> response = exchange(endPoint + username + '/authenticate', HttpMethod.GET, entity, String.class)
-        u2fUserContext.authenticateRequestData = response.body
-        log.debug("beginAuthentication() - status code: {} result: {}", response.statusCode, response.body)
+        def slurper = new JsonSlurper()
+        try {
+            ResponseEntity<String> response = exchange(endPoint + username + '/', HttpMethod.GET, entity, String.class)
+            def res = slurper.parseText(response.body)
+            log.debug("hasU2fDevice() - status code: {}, data: {}", response.statusCode, res)
+            if (res == null || res == []) {
+                return false
+            }
+            return true
+        } catch (HttpStatusCodeException e) {
+            def res = slurper.parseText(e.responseBodyAsString)
+            log.error("U2fval response error: {}, data: ", e.statusCode, e.responseBodyAsString)
+            if (res?.errorCode == 11) {
+                log.debug("U2fval error code is: {}", res.errorCode)
+            } else {
+                throw RuntimeException(e)
+            }
+        }
+        return false
+    }
+
+    @Override
+    def beginAuthentication(U2fUserContext u2fUserContext) {
+        def username = u2fUserContext.username
+        log.debug("Begin U2F authentication for user {}", u2fUserContext.username)
+        HttpEntity<Object> entity = new HttpEntity<>(headers)
+        try {
+            ResponseEntity<String> response = exchange(endPoint + username + '/authenticate', HttpMethod.GET, entity, String.class)
+            u2fUserContext.authenticateRequestData = response.body
+            log.debug("beginAuthentication() - status code: {} result: {}", response.statusCode, response.body)
+        } catch (HttpStatusCodeException e) {
+            def slurper = new JsonSlurper()
+            def res = slurper.parseText(e.responseBodyAsString)
+            log.error("U2fval response error: {} {}", e.statusCode, e.responseBodyAsString)
+            if (res?.errorCode == 11) {
+                log.debug("U2fval error code is: {}", res.errorCode)
+                u2fUserContext.state = AuthnEventIds.NO_CREDENTIALS
+                return false
+            }
+        }
+        return true
     }
 
     @Override
@@ -66,6 +115,32 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
         try {
             ResponseEntity<String> response = exchange(endPoint + username + '/authenticate', HttpMethod.POST, entity, String.class)
             log.debug("finishAuthentication() status code: ${response.statusCode} payload: ${response.body}")
+            return true
+        } catch (HttpStatusCodeException e) {
+            log.error("U2fval response error: {} {}", e.statusCode, e.responseBodyAsString)
+        }
+
+        return false
+    }
+
+    @Override
+    def beginRegistration(U2fUserContext u2fUserContext) {
+        def username = u2fUserContext.username
+        HttpEntity<Object> entity = new HttpEntity<>(headers)
+        ResponseEntity<String> response = exchange(endPoint + username + '/register', HttpMethod.GET, entity, String.class)
+        u2fUserContext.registrationData = response.body
+        log.debug("beginReqistration() - status code: {} result: {}", response.statusCode, response.body)
+    }
+
+    @Override
+    boolean finishRegistration(U2fUserContext u2fUserContext) {
+        def username = u2fUserContext.username
+        def payload = '{"registerResponse": ' + (String) u2fUserContext.registrationDataResponse + '}'
+        log.debug("finishReqistration() payload: {}", payload)
+        HttpEntity<Object> entity = new HttpEntity<>(payload, headers)
+        try {
+            ResponseEntity<String> response = exchange(endPoint + username + '/register', HttpMethod.POST, entity, String.class)
+            log.debug("finishRegistration() status code: ${response.statusCode} payload: ${response.body}")
             return true
         } catch (HttpStatusCodeException e) {
             log.error("U2fval response error: {} {}", e.statusCode, e.responseBodyAsString)

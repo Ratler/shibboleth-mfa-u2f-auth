@@ -50,6 +50,7 @@ dependencies {
     provided "net.shibboleth.idp:idp-attribute-resolver-api:${project.'shibboleth.version'}"
     provided "net.shibboleth.idp:idp-attribute-resolver-spring:${project.'shibboleth.version'}"
     provided "net.shibboleth.idp:idp-profile-api:${project.'shibboleth.version'}"
+    provided "net.shibboleth.utilities:java-support:${project.'java-support.version'}"
     provided "org.opensaml:opensaml-profile-api:${project.'opensaml.version'}"
     provided "org.springframework:spring-context:${project.'spring.version'}"
     provided "org.springframework:spring-web:${project.'spring.version'}"
@@ -63,9 +64,14 @@ distributions {
     main {
         contents {
             duplicatesStrategy = 'exclude'
-            from {
-                'src/main/resources'
+            into ('docs') {
+                from (".") {
+                    include "README.md", "LICENSE"
+                }
             }
+            /*from {
+                'src/main/resources'
+            }*/
             into ('edit-webapp/WEB-INF/lib') {
                 from { project.jar }
                 from { (project.configurations.compile - project.configurations.provided )}

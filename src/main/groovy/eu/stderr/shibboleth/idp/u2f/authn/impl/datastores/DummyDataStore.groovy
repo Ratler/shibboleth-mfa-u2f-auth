@@ -16,15 +16,21 @@
  */
 
 package eu.stderr.shibboleth.idp.u2f.authn.impl.datastores
+
 import com.yubico.u2f.U2F
 import com.yubico.u2f.data.DeviceRegistration
 import com.yubico.u2f.data.messages.AuthenticateRequestData
 import com.yubico.u2f.data.messages.AuthenticateResponse
 import com.yubico.u2f.exceptions.DeviceCompromisedException
-import eu.stderr.shibboleth.idp.u2f.authn.DeviceDataStore
+import eu.stderr.shibboleth.idp.u2f.authn.api.DeviceDataStore
 import eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext
 import groovy.json.JsonOutput
 import groovy.util.logging.Slf4j
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
+
 
 @Slf4j
 public class DummyDataStore implements DeviceDataStore {
@@ -35,14 +41,31 @@ public class DummyDataStore implements DeviceDataStore {
     final private U2F u2f = new U2F()
 
     /** Constructor */
-    public DummyDataStore(String keyHandle, String publicKey) {
+    @Override
+    def beginRegistration(U2fUserContext u2fUserContext) {
+        throw NotImplementedException()
+    }
+
+    @Override
+    boolean finishRegistration(U2fUserContext u2fUserContext) {
+        throw NotImplementedException()
+    }
+
+    @Autowired
+    DummyDataStore(@Value('${u2f.dummyStore.keyHandle}') String keyHandle,
+                   @Value('${u2f.dummyStore.publicKey}') String publicKey) {
         log.debug("U2F DummyDataStore constructor")
         this.publicKey = publicKey
         this.keyHandle = keyHandle
     }
 
     @Override
-    def beginAuthentication(String username, U2fUserContext u2fUserContext) {
+    boolean hasU2fDevice(String username) {
+        return true
+    }
+
+    @Override
+    def beginAuthentication(U2fUserContext u2fUserContext) {
         List<DeviceRegistration> tokens = new ArrayList<DeviceRegistration>()
         if (!u2fUserContext?.tokens) {
             def json = JsonOutput.toJson([keyHandle: keyHandle, publicKey: publicKey,

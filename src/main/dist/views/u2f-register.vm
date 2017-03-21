@@ -1,0 +1,55 @@
+#set ($data = $authenticationContext.getSubcontext('eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext').getRegistrationDataAsJson())
+#set ($userContext = $authenticationContext.getSubcontext('eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext', true))
+#set ($haveU2f = $utility.haveU2f($userContext))
+#set ($errorMessage = $authenticationContext.getSubcontext('eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext').getErrorMessage())
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>#springMessageText("idp.title", "Web Login Service")</title>
+    <link rel="stylesheet" type="text/css" href="$request.getContextPath()/css/main.css">
+    #if (!$haveU2f)
+    <script src="$request.getContextPath()/js/u2f-api.js"></script>
+    <script>
+        var request = $data;
+        u2f.register(request.registerRequests, request.authenticateRequests, function(resp) {
+            if (resp.errorCode) {
+                alert('Error: ' + resp.errorCode);
+            } else {
+                document.getElementById('u2f_data').value = JSON.stringify(resp);
+                document.getElementById('u2f_form').submit();
+            }
+        });
+    </script>
+    #end
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+        <header>
+            <img src="$request.getContextPath()#springMessage("idp.logo")" alt="#springMessage("idp.logo.alt-text", "logo")">
+        </header>
+        <div class="content">
+            <div class="column one">
+                #parse("login-error.vm")
+                #if("$errorMessage" != "")
+                    <p class="form-element form-error">$encoder.encodeForHTML($errorMessage)</p>
+                #end
+                #if (!$haveU2f)
+                <p>Insert and touch a new U2F device to register it to your account.</p>
+                <form id="u2f_form" action="$flowExecutionUrl" method="POST">
+                    <input type="hidden" name="_eventId" value="proceed" />
+                    <input type="hidden" name="u2f_data" id="u2f_data"/>
+                </form>
+                #else
+                <p>An U2F device has already been registered with your account. Please click the button below to continue signing in.</p>
+                <form id="u2f_form" action="$flowExecutionUrl" method="POST">
+                    <br><br><button type="submit" name="registerToken" formaction="$flowExecutionUrl&_eventId=displayU2fForm">Continue to sign-in</button>
+                </form>
+                #end
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

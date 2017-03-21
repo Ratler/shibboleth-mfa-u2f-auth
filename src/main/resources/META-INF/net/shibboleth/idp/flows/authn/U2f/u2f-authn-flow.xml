@@ -1,0 +1,99 @@
+<flow xmlns="http://www.springframework.org/schema/webflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/webflow http://www.springframework.org/schema/webflow/spring-webflow.xsd"
+	parent="authn.abstract">
+
+    <!-- Rudimentary impediment to direct execution of subflow. -->
+
+    <!--
+    <input name="calledAsSubflow" type="boolean" required="true" />
+    -->
+    <!--
+    <subflow-state id="CallPasswordFlow" subflow="authn/Password">
+        <input name="calledAsSubflow" value="true" />
+        <transition on="proceed" to="hasRegisteredU2fDevice" />
+    </subflow-state>
+    -->
+    <!--
+    <action-state id="hasRegisteredU2fDevice">
+        <evaluate expression="initializeU2fRequest.haveU2f(opensamlProfileRequestContext)" />
+        <evaluate expression="'proceed'" />
+        <transition on="NoU2f" to="proceed" />
+        <transition on="HaveU2f" to="displayU2fForm" />
+    </action-state>
+    -->
+
+    <!-- Display U2F authentication view -->
+    <view-state id="displayU2fForm" view="u2f">
+        <on-entry>
+            <evaluate expression="initializeU2fRequest"/>
+            <evaluate expression="environment" result="viewScope.environment" />
+            <evaluate expression="opensamlProfileRequestContext" result="viewScope.profileRequestContext" />
+            <evaluate expression="opensamlProfileRequestContext.getSubcontext(T(net.shibboleth.idp.authn.context.AuthenticationContext))"
+                      result="viewScope.authenticationContext" />
+            <evaluate expression="T(net.shibboleth.utilities.java.support.codec.HTMLEncoder)" result="viewScope.encoder" />
+            <evaluate expression="flowRequestContext.getExternalContext().getNativeRequest()" result="viewScope.request" />
+            <evaluate expression="flowRequestContext.getExternalContext().getNativeResponse()" result="viewScope.response" />
+            <evaluate
+                    expression="flowRequestContext.getActiveFlow().getApplicationContext().containsBean('shibboleth.CustomViewContext') ? flowRequestContext.getActiveFlow().getApplicationContext().getBean('shibboleth.CustomViewContext') : null"
+                    result="viewScope.custom" />
+        </on-entry>
+        <!-- <transition on="NoCredentials" to="registerDevice" /> -->
+        <transition on="proceed" to="validateU2fResponse"/>
+    </view-state>
+
+    <!-- Register U2F device view -->
+    <!--
+    <view-state id="registerDevice" view="u2f-register">
+        <on-entry>
+            <evaluate expression="beginRegisterNewDevice" />
+            <evaluate expression="environment" result="viewScope.environment" />
+            <evaluate expression="opensamlProfileRequestContext" result="viewScope.profileRequestContext" />
+            <evaluate expression="opensamlProfileRequestContext.getSubcontext(T(net.shibboleth.idp.authn.context.AuthenticationContext))"
+                      result="viewScope.authenticationContext" />
+            <evaluate expression="T(net.shibboleth.utilities.java.support.codec.HTMLEncoder)" result="viewScope.encoder" />
+            <evaluate expression="flowRequestContext.getExternalContext().getNativeRequest()" result="viewScope.request" />
+            <evaluate expression="flowRequestContext.getExternalContext().getNativeResponse()" result="viewScope.response" />
+            <evaluate
+                    expression="flowRequestContext.getActiveFlow().getApplicationContext().containsBean('shibboleth.CustomViewContext') ? flowRequestContext.getActiveFlow().getApplicationContext().getBean('shibboleth.CustomViewContext') : null"
+                    result="viewScope.custom" />
+        </on-entry>
+        <transition on="HaveU2f" to="displayU2fForm" />
+        <transition on="displayU2fForm" to="displayU2fForm" />
+        <transition on="proceed" to="processRegisterNewDevice" />
+    </view-state>
+    -->
+    <!--
+    <action-state id="addDevice">
+        <evaluate expression="beginRegisterNewDevice" />
+        <evaluate expression="'proceed'" />
+        <transition on="proceed" to="registerDevice" />
+    </action-state>
+    -->
+
+    <!--
+    <action-state id="processRegisterNewDevice">
+        <evaluate expression="finishRegisterNewDevice"/>
+        <evaluate expression="'proceed'"/>
+        <transition on="proceed" to="displayU2fForm" />
+    </action-state>
+    -->
+    <!--
+    <action-state id="processU2fResponse">
+        <evaluate expression="processU2fResponse"/>
+        <evaluate expression="'proceed'"/>
+        <transition on="proceed" to="validateU2fResponse"/>
+    </action-state>
+    -->
+
+    <action-state id="validateU2fResponse">
+        <evaluate expression="validateU2fResponse"/>
+        <evaluate expression="'proceed'"/>
+        <transition on="AccountError" to="displayU2fForm"/>
+        <transition on="InvalidCredentials" to="displayU2fForm"/>
+        <transition on="NoCredentials" to="displayU2fForm" />
+        <transition on="proceed" to="proceed"/>
+    </action-state>
+
+    <bean-import resource="u2f-authn-beans.xml" />
+
+</flow>

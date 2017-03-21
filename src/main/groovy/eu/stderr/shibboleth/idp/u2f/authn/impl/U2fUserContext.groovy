@@ -18,6 +18,7 @@
 package eu.stderr.shibboleth.idp.u2f.authn.impl
 
 import com.yubico.u2f.data.messages.AuthenticateRequestData
+import com.yubico.u2f.data.messages.RegisterRequestData
 import groovy.util.logging.Slf4j
 import org.opensaml.messaging.context.BaseContext
 
@@ -29,6 +30,8 @@ class U2fUserContext extends BaseContext {
     def tokens
     def state
     def authenticateRequestData
+    def registrationData
+    def registrationDataResponse
     def initialized = false
 
     def getAppId() {
@@ -45,6 +48,14 @@ class U2fUserContext extends BaseContext {
             return authenticateRequestData.toJson()
         }
         return authenticateRequestData
+    }
+
+
+    def getRegistrationDataAsJson() {
+        if (registrationData instanceof RegisterRequestData) {
+            return registrationData.toJson()
+        }
+        return registrationData
     }
 
     /**
