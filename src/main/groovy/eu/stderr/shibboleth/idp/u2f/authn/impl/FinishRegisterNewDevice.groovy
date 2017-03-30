@@ -32,12 +32,15 @@ import javax.servlet.http.HttpServletRequest
 
 @Slf4j
 class FinishRegisterNewDevice extends AbstractProfileAction {
-    U2fUserContext userContext
-
     @Autowired
     @Qualifier('deviceDataStore')
     DeviceDataStore dataStore
 
+    /** User context */
+    U2fUserContext userContext
+
+
+    /** {@inheritDoc} */
     @Override
     protected boolean doPreExecute(ProfileRequestContext profileRequestContext) {
         try {
@@ -50,6 +53,7 @@ class FinishRegisterNewDevice extends AbstractProfileAction {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void doExecute(@Nonnull final ProfileRequestContext profileRequestContext) {
         log.debug("{} Entering doExecute", getLogPrefix())

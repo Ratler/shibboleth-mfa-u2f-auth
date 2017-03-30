@@ -2,17 +2,6 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/webflow http://www.springframework.org/schema/webflow/spring-webflow.xsd"
 	parent="authn.abstract">
 
-    <!-- Rudimentary impediment to direct execution of subflow. -->
-
-    <!--
-    <input name="calledAsSubflow" type="boolean" required="true" />
-    -->
-    <!--
-    <subflow-state id="CallPasswordFlow" subflow="authn/Password">
-        <input name="calledAsSubflow" value="true" />
-        <transition on="proceed" to="hasRegisteredU2fDevice" />
-    </subflow-state>
-    -->
     <!--
     <action-state id="hasRegisteredU2fDevice">
         <evaluate expression="initializeU2fRequest.haveU2f(opensamlProfileRequestContext)" />
@@ -75,13 +64,6 @@
         <evaluate expression="finishRegisterNewDevice"/>
         <evaluate expression="'proceed'"/>
         <transition on="proceed" to="displayU2fForm" />
-    </action-state>
-    -->
-    <!--
-    <action-state id="processU2fResponse">
-        <evaluate expression="processU2fResponse"/>
-        <evaluate expression="'proceed'"/>
-        <transition on="proceed" to="validateU2fResponse"/>
     </action-state>
     -->
 

@@ -27,7 +27,7 @@ class Utility {
     @Qualifier('deviceDataStore')
     DeviceDataStore dataStore
 
-    public haveU2f(U2fUserContext userContext) {
+    boolean haveU2f(U2fUserContext userContext) {
         return dataStore.hasU2fDevice(userContext.username)
     }
 }

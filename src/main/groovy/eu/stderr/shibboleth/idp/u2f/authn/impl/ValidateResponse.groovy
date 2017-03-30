@@ -46,14 +46,8 @@ class ValidateResponse extends AbstractValidationAction {
     @Qualifier('deviceDataStore')
     private DeviceDataStore dataStore
 
+    /** User context */
     private U2fUserContext u2fUserContext
-
-    /** Constructor */
-    /*public ValidateResponse() {
-        super()
-        log.debug("Constructor ValidateResponse()")
-    }*/
-
 
     /** {@inheritDoc} */
     @Override

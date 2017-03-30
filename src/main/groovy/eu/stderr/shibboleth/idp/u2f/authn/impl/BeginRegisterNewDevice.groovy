@@ -38,6 +38,7 @@ class BeginRegisterNewDevice extends AbstractProfileAction {
     /** User context */
     U2fUserContext userContext
 
+    /** {@inheritDoc} */
     @Override
     protected boolean doPreExecute(ProfileRequestContext profileRequestContext) {
         try {
@@ -50,6 +51,7 @@ class BeginRegisterNewDevice extends AbstractProfileAction {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Event doExecute(@Nonnull final RequestContext requestContext,
                               @Nonnull final ProfileRequestContext profileRequestContext) {
