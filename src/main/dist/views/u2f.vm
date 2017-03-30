@@ -7,15 +7,9 @@
     <title>#springMessageText("idp.title", "Web Login Service")</title>
     <link rel="stylesheet" type="text/css" href="$request.getContextPath()/css/main.css">
     <script src="$request.getContextPath()/js/u2f-api.js"></script>
+    <script src="$request.getContextPath()/js/u2f-shib.js"></script>
     <script>
-        var request = $data;
-        setTimeout(function() {
-            u2f.sign(request.authenticateRequests,
-                    function(data) {
-                        document.getElementById('tokenResponse').value = JSON.stringify(data);
-                        document.getElementById('u2f_form').submit();
-                    });
-        }, 1000);
+        u2fSign($data);
     </script>
 </head>
 <body>

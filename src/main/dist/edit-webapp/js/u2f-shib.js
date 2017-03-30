@@ -14,6 +14,28 @@
  *  limitations under the License.
  */
 
-/**
- * Created by ratler on 3/27/17.
- */
+
+function u2fSign(data) {
+    setTimeout(function() {
+        u2f.sign(data.authenticateRequests[0].appId,
+            data.authenticateRequests[0].challenge,
+            data.authenticateRequests,
+            function(resp) {
+                document.getElementById('tokenResponse').value = JSON.stringify(resp);
+                document.getElementById('u2f_form').submit();
+            });
+    }, 1000);
+}
+
+function u2fRegiser(data) {
+    u2f.register(data.registerRequests[0].appId,
+        data.registerRequests,
+        data.authenticateRequests, function(resp) {
+        if (resp.errorCode) {
+            alert('Error: ' + resp.errorCode);
+        } else {
+            document.getElementById('u2f_data').value = JSON.stringify(resp);
+            document.getElementById('u2f_form').submit();
+        }
+    });
+}

@@ -10,16 +10,9 @@
     <link rel="stylesheet" type="text/css" href="$request.getContextPath()/css/main.css">
     #if (!$haveU2f)
     <script src="$request.getContextPath()/js/u2f-api.js"></script>
+    <script src="$request.getContextPath()/js/u2f-shib.js"></script>
     <script>
-        var request = $data;
-        u2f.register(request.registerRequests, request.authenticateRequests, function(resp) {
-            if (resp.errorCode) {
-                alert('Error: ' + resp.errorCode);
-            } else {
-                document.getElementById('u2f_data').value = JSON.stringify(resp);
-                document.getElementById('u2f_form').submit();
-            }
-        });
+        u2fRegiser($data);
     </script>
     #end
 </head>
