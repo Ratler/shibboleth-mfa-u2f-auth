@@ -65,7 +65,7 @@ public class InitializeRequest extends AbstractExtractionAction {
     @Nonnull
     private Function<ProfileRequestContext,String> usernameLookupStrategy
 
-    public InitializeRequest() {
+    InitializeRequest() {
         super()
         usernameLookupStrategy = new CanonicalUsernameLookupStrategy()
     }
@@ -103,14 +103,15 @@ public class InitializeRequest extends AbstractExtractionAction {
                 log.debug("beginAuthentication() failed with state: {}", state)
                 // Reset state
                 u2fUserContext.state = ""
-                ActionSupport.buildEvent(profileRequestContext, state)
+                ActionSupport.buildEvent(profileRequestContext, (String) state)
             }
         } catch (Exception e) {
             log.warn("{} Error in doExecute", getLogPrefix(), e)
+            ActionSupport.buildEvent(profileRequestContext, AuthnEventIds.INVALID_AUTHN_CTX)
         }
     }
 
-    public Event haveU2f(ProfileRequestContext profileRequestContext) {
+    Event haveU2f(ProfileRequestContext profileRequestContext) {
         username = usernameLookupStrategy.apply(profileRequestContext)
 
         if (username && dataStore.hasU2fDevice(username)) {

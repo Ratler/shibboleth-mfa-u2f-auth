@@ -22,39 +22,58 @@ import eu.stderr.shibboleth.idp.u2f.authn.impl.U2fUserContext
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import net.shibboleth.idp.authn.AuthnEventIds
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
+import org.apache.http.HttpHost
+import org.apache.http.auth.AuthScope
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.client.AuthCache
+import org.apache.http.client.CredentialsProvider
+import org.apache.http.client.HttpClient
+import org.apache.http.client.protocol.HttpClientContext
+import org.apache.http.impl.auth.DigestScheme
+import org.apache.http.impl.client.BasicAuthCache
+import org.apache.http.impl.client.BasicCredentialsProvider
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.protocol.HttpContext
 import org.springframework.http.*
-import org.springframework.http.client.ClientHttpRequestExecution
-import org.springframework.http.client.ClientHttpRequestInterceptor
-import org.springframework.http.client.ClientHttpResponse
-import org.springframework.http.client.InterceptingClientHttpRequestFactory
-import org.springframework.stereotype.Service
+import org.springframework.http.client.*
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
 
-@Service(value='YubicoU2fValidationServerDataStore')
 @Slf4j
-class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceDataStore {
+class YubicoU2fValidationServerDataStore implements DeviceDataStore {
     private String endPoint
     private HttpHeaders headers = new HttpHeaders()
+    private RestTemplate restTemplate = new RestTemplate()
 
     /** Constructor */
-    @Autowired
-    YubicoU2fValidationServerDataStore(@Value('${u2f.u2fval.endPoint}') String endPoint,
-                                       @Value('${u2f.u2fval.username}') String username = null,
-                                       @Value('${u2f.u2fval.password}') String password = null) {
+    YubicoU2fValidationServerDataStore(String endPoint, String username = null, String password = null, String realm = null) {
         log.debug("YubicoU2fValidationServerDataStore constructor adding endpoint (${endPoint})")
         if (endPoint[-1] != '/') {
             endPoint += '/'
         }
         this.endPoint = endPoint
 
-        if (username && password) {
+
+        if (username && password && realm) {
+            log.debug("Setting up DigestAuth for U2Fval and realm: {}", realm)
+            URL url = new URL(endPoint)
+            HttpHost host = new HttpHost(url.host, url.port, url.protocol)
+            CredentialsProvider provider = new BasicCredentialsProvider()
+            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password)
+            provider.setCredentials(AuthScope.ANY, credentials)
+            CloseableHttpClient client = HttpClientBuilder.create()
+                    .setDefaultCredentialsProvider(provider)
+                    .useSystemProperties().build()
+            HttpComponentsClientHttpRequestFactory requestFactory = new DigestAuthHttpRequestFactory(host, client, realm)
+            restTemplate.setRequestFactory(requestFactory)
+        }
+        else if (username && password) {
+            log.debug("Setting up BasicAuth for U2Fval")
             List<ClientHttpRequestInterceptor> interceptors = Collections
                     .<ClientHttpRequestInterceptor> singletonList(
-                    new BasicAuthInterceptor(username, password))
-            setRequestFactory(new InterceptingClientHttpRequestFactory(getRequestFactory(), interceptors))
+                    new BasicAuthInterceptor(username: username, password: password))
+            restTemplate.setRequestFactory(new InterceptingClientHttpRequestFactory(restTemplate.getRequestFactory(), interceptors))
         }
         headers.setContentType(MediaType.APPLICATION_JSON)
     }
@@ -65,7 +84,7 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
         HttpEntity<Object> entity = new HttpEntity<>(headers)
         def slurper = new JsonSlurper()
         try {
-            ResponseEntity<String> response = exchange(endPoint + username + '/', HttpMethod.GET, entity, String.class)
+            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/', HttpMethod.GET, entity, String.class)
             def res = slurper.parseText(response.body)
             log.debug("hasU2fDevice() - status code: {}, data: {}", response.statusCode, res)
             if (res == null || res == []) {
@@ -90,7 +109,7 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
         log.debug("Begin U2F authentication for user {}", u2fUserContext.username)
         HttpEntity<Object> entity = new HttpEntity<>(headers)
         try {
-            ResponseEntity<String> response = exchange(endPoint + username + '/authenticate', HttpMethod.GET, entity, String.class)
+            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/authenticate', HttpMethod.GET, entity, String.class)
             u2fUserContext.authenticateRequestData = response.body
             log.debug("beginAuthentication() - status code: {} result: {}", response.statusCode, response.body)
         } catch (HttpStatusCodeException e) {
@@ -113,7 +132,7 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
         log.debug("finishAuthentication() payload: " + payload)
         HttpEntity<Object> entity = new HttpEntity<>(payload, headers)
         try {
-            ResponseEntity<String> response = exchange(endPoint + username + '/authenticate', HttpMethod.POST, entity, String.class)
+            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/authenticate', HttpMethod.POST, entity, String.class)
             log.debug("finishAuthentication() status code: ${response.statusCode} payload: ${response.body}")
             return true
         } catch (HttpStatusCodeException e) {
@@ -127,19 +146,19 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
     def beginRegistration(U2fUserContext u2fUserContext) {
         def username = u2fUserContext.username
         HttpEntity<Object> entity = new HttpEntity<>(headers)
-        ResponseEntity<String> response = exchange(endPoint + username + '/register', HttpMethod.GET, entity, String.class)
+        ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/register', HttpMethod.GET, entity, String.class)
         u2fUserContext.registrationData = response.body
-        log.debug("beginReqistration() - status code: {} result: {}", response.statusCode, response.body)
+        log.debug("beginRegistration() - status code: {} result: {}", response.statusCode, response.body)
     }
 
     @Override
     boolean finishRegistration(U2fUserContext u2fUserContext) {
         def username = u2fUserContext.username
         def payload = '{"registerResponse": ' + (String) u2fUserContext.registrationDataResponse + '}'
-        log.debug("finishReqistration() payload: {}", payload)
+        log.debug("finishRegistration() payload: {}", payload)
         HttpEntity<Object> entity = new HttpEntity<>(payload, headers)
         try {
-            ResponseEntity<String> response = exchange(endPoint + username + '/register', HttpMethod.POST, entity, String.class)
+            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/register', HttpMethod.POST, entity, String.class)
             log.debug("finishRegistration() status code: ${response.statusCode} payload: ${response.body}")
             return true
         } catch (HttpStatusCodeException e) {
@@ -152,20 +171,46 @@ class YubicoU2fValidationServerDataStore extends RestTemplate implements DeviceD
      * HTTP basic authentication interceptor for RestTemplate
      */
     private static class BasicAuthInterceptor implements ClientHttpRequestInterceptor {
-        private def username
-        private def password
-
-        /** Constructor */
-        public BasicAuthInterceptor(String username, String password) {
-            this.username = username
-            this.password = password
-        }
+        def username
+        def password
 
         @Override
-        public ClientHttpResponse intercept(HttpRequest request, byte[] data, ClientHttpRequestExecution execution) throws IOException {
+        ClientHttpResponse intercept(HttpRequest request, byte[] data, ClientHttpRequestExecution execution) throws IOException {
             byte[] token = Base64.encoder.encode(("${this.username}:${this.password}").getBytes())
             request.headers.add("Authorization", "Basic " + new String(token))
             return execution.execute(request, data)
+        }
+    }
+
+    /**
+     * HTTP Digest Authentication Factory for RestTemplate
+     */
+    private static class DigestAuthHttpRequestFactory extends HttpComponentsClientHttpRequestFactory {
+        HttpHost host
+        private String realm
+
+        DigestAuthHttpRequestFactory(HttpHost host, final HttpClient client, final String realm) {
+            super(client)
+            this.host = host
+            this.realm = realm
+        }
+
+        @Override
+        protected HttpContext createHttpContext(HttpMethod httpMethod, URI uri) {
+            return createHttpContext()
+        }
+
+        protected HttpContext createHttpContext() {
+            log.debug("Setting Digest Realm to ${realm}")
+            AuthCache authCache = new BasicAuthCache()
+            DigestScheme digestAuth = new DigestScheme()
+            digestAuth.overrideParamter("realm", realm)
+            digestAuth.overrideParamter("nonce", Long.toString(new Random().nextLong(), 36))
+            authCache.put(host, digestAuth)
+            HttpClientContext localCtx = HttpClientContext.create()
+            localCtx.setAuthCache(authCache)
+
+            return localCtx
         }
     }
 }

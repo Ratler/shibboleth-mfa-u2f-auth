@@ -21,14 +21,17 @@
 
     <bean id="dummyDataStore"
           class="eu.stderr.shibboleth.idp.u2f.authn.impl.datastores.DummyDataStore"
-          c:keyHandle="%{u2f.dummyStore.keyHandle:none}"
-          c:publicKey="%{u2f.dummyStore.keyHandle:none}" />
+          c:keyHandle="%{u2f.dummyStore.keyHandle:#{null}}"
+          c:publicKey="%{u2f.dummyStore.keyHandle:#{null}}"
+          lazy-init="true"/>
 
     <bean id="yubicoU2fValidationServerDataStore"
           class="eu.stderr.shibboleth.idp.u2f.authn.impl.datastores.YubicoU2fValidationServerDataStore"
-          c:endPoint="%{u2f.u2fval.endPoint:none}"
-          c:username="%{u2f.u2fval.username:none}"
-          c:password="%{u2f.u2fval.password:none}" />
+          c:endPoint="%{u2f.u2fval.endPoint:#{null}}"
+          c:username="%{u2f.u2fval.username:#{null}}"
+          c:password="%{u2f.u2fval.password:#{null}}"
+          c:realm="%{u2f.u2fval.realm:#{null}}"
+          lazy-init="true"/>
 
 
     <!-- U2F flow beans -->
@@ -36,12 +39,6 @@
           scope="prototype"
           class="eu.stderr.shibboleth.idp.u2f.authn.impl.InitializeRequest" />
 
-    <!--
-    <bean id="processU2fResponse"
-          scope="prototype"
-          class="eu.stderr.shibboleth.idp.u2f.authn.impl.ProcessResponse"
-          p:httpServletRequest-ref="shibboleth.HttpServletRequest" />
-    -->
     <bean id="validateU2fResponse"
           scope="prototype"
           class="eu.stderr.shibboleth.idp.u2f.authn.impl.ValidateResponse"
@@ -57,18 +54,9 @@
           p:httpServletRequest-ref="shibboleth.HttpServletRequest" />
 
     <!-- Default username comes from previous c14n or session. -->
-    <bean id="shibboleth.authn.Duo.UsernameLookupStrategy"
+    <bean id="eu.stderr.shibboleth.idp.u2f.UsernameLookupStrategy"
           class="net.shibboleth.idp.session.context.navigate.CanonicalUsernameLookupStrategy" />
 
-    <alias name="shibboleth.authn.Duo.UsernameLookupStrategy" alias="CanonicalUsernameStrategy" />
+    <alias name="eu.stderr.shibboleth.idp.u2f.UsernameLookupStrategy" alias="CanonicalUsernameStrategy" />
 
-    <!--
-    <bean id="shibboleth.PrincipalSerializers" parent="shibboleth.DefaultPrincipalSerializers">
-        <property name="sourceList">
-            <list merge="true">
-                <bean class="eu.stderr.shibboleth.idp.u2f.authn.impl.U2fPrincipalSerializer" />
-            </list>
-        </property>
-    </bean>
-    -->
 </beans>

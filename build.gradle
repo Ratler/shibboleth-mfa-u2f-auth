@@ -40,6 +40,7 @@ repositories {
 dependencies {
     compile "org.codehaus.groovy:groovy-all:${project.'groovy.version'}"
     compile "com.yubico:u2flib-server-core:${project.'yubico-u2flib.version'}"
+    compile "org.apache.httpcomponents:httpclient:${project.'httpclient.version'}"
 
     provided "javax.servlet:javax.servlet-api:${project.'javax-servlet.version'}"
     provided "net.shibboleth.idp:idp-authn-api:${project.'shibboleth.version'}"
