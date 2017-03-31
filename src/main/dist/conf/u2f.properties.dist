@@ -1,5 +1,30 @@
+####################
+# General settings #
+####################
+
+## U2F Application Facets - see https://developers.yubico.com/U2F/App_ID.html) for more information
 u2f.appId=https://idp.example.org
-u2f.dataStore=YubicoU2fValidationServerDataStore
-u2f.u2fval.endPoint=
-u2f.u2fval.username=
-u2f.u2fval.password=
+
+
+## Data store configuration - available data stores are, dummyDataStore and yubicoU2fValidationDataStore
+## Uncomment one of the data stores and it's configuration properties, update the empty properties where needed.
+
+#################################
+# dummyDataStore (testing only) #
+#################################
+# u2f.dataStore=dummyDataStore
+# u2f.dummyStore.keyHandle=
+# u2f.dummyStore.public=
+
+
+################################
+# yubicoU2fValidationDataStore #
+################################
+# u2f.dataStore=yubicoU2fValidationServerDataStore
+## URL to the U2Fval API
+# u2f.u2fval.endPoint=
+## U2Fval HTTP Basic Authentication set the properties u2f.u2fval.username and u2f.u2fval.password
+# u2f.u2fval.username=
+# u2f.u2fval.password=
+## For HTTP Digest Authentication also set the property u2f.u2fval.realm  
+# u2f.u2val.realm=
