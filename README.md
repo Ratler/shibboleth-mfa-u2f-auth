@@ -43,7 +43,7 @@ configure one of the supported data stores, u2fval is recommended.
 
 4. Edit `$IDP_HOME/conf/idp.properties` and change the following properties:
   * Append `/conf/u2f.properties` to the property `idp.additionalProperties=`, eg `idp.additionalProperties= /conf/ldap.properties, /conf/saml-nameid.properties, /conf/services.properties, /conf/u2f.properties`
-  * Change the property `idp.auth.flows=` to `idp.auth.flows=MFA`
+  * Change the property `idp.authn.flows=` to `idp.authn.flows=MFA`
 
 5. Edit `$IDP_HOME/conf/authn/general-authn.xml`, add `authn/U2f` bean to the element `<util:list id="shibboleth.AvailableAuthenticationFlows">`
 ```
