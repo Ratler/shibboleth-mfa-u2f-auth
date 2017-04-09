@@ -109,7 +109,7 @@ class YubicoU2fValidationServerDataStore implements DeviceDataStore {
         log.debug("Begin U2F authentication for user {}", u2fUserContext.username)
         HttpEntity<Object> entity = new HttpEntity<>(headers)
         try {
-            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/authenticate', HttpMethod.GET, entity, String.class)
+            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/sign', HttpMethod.GET, entity, String.class)
             u2fUserContext.authenticateRequestData = response.body
             log.debug("beginAuthentication() - status code: {} result: {}", response.statusCode, response.body)
         } catch (HttpStatusCodeException e) {
@@ -128,11 +128,11 @@ class YubicoU2fValidationServerDataStore implements DeviceDataStore {
     @Override
     boolean finishAuthentication(U2fUserContext u2fUserContext) {
         def username = u2fUserContext.username
-        def payload = '{"authenticateResponse": ' + (String) u2fUserContext.tokenResponse + '}'
+        def payload = '{"signResponse": ' + (String) u2fUserContext.tokenResponse + '}'
         log.debug("finishAuthentication() payload: " + payload)
         HttpEntity<Object> entity = new HttpEntity<>(payload, headers)
         try {
-            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/authenticate', HttpMethod.POST, entity, String.class)
+            ResponseEntity<String> response = restTemplate.exchange(endPoint + username + '/sign', HttpMethod.POST, entity, String.class)
             log.debug("finishAuthentication() status code: ${response.statusCode} payload: ${response.body}")
             return true
         } catch (HttpStatusCodeException e) {

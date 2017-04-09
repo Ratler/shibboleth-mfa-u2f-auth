@@ -17,9 +17,9 @@
 
 function u2fSign(data) {
     setTimeout(function() {
-        u2f.sign(data.authenticateRequests[0].appId,
-            data.authenticateRequests[0].challenge,
-            data.authenticateRequests,
+        u2f.sign(data.appId,
+            data.challenge,
+            data.registeredKeys,
             function(resp) {
                 document.getElementById('tokenResponse').value = JSON.stringify(resp);
                 document.getElementById('u2f_form').submit();
@@ -28,9 +28,9 @@ function u2fSign(data) {
 }
 
 function u2fRegiser(data) {
-    u2f.register(data.registerRequests[0].appId,
+    u2f.register(data.appId,
         data.registerRequests,
-        data.authenticateRequests, function(resp) {
+        data.registeredKeys, function(resp) {
         if (resp.errorCode) {
             alert('Error: ' + resp.errorCode);
         } else {
